@@ -201,6 +201,8 @@ Se establecieron los siguientes criterios de diseño para guiar el desarrollo y 
 *   Claridad en la visualización de la información: La pantalla LCD debe mostrar la información de forma clara y concisa, comprensible para los usuarios. El tablero de control web debe presentar la información de manera organizada e intuitiva, permitiendo a los usuarios monitorear el nivel del agua y el estado del sistema de forma remota.
 *   Rentabilidad: El sistema debe diseñarse utilizando componentes fácilmente disponibles y asequibles.
 *   Facilidad de montaje: El sistema debe ser relativamente fácil de montar y mantener.
+*   Latencia aceptable para visualización y control remoto.
+*   Robustez ante fallos temporales de conectividad a Internet
 
 ## 3.Configuración experimental, resultados y análisis
 ### Descripción del entorno de prueba
@@ -218,41 +220,47 @@ Para la realización de las pruebas, se utilizaron los siguientes equipos y mate
 *    Termo y envase (Utilizados para simular la lluvia)
 *    Recipiente plástico (Utilizado para simular un río)
 *    Computadora para acceder al tablero de control
+*    Raspberry Pi
+*    SD Card
 
 Cabe recalcar que para estas pruebas, el estado seguro de río está para 7 o más centímetros de distancia del sensor, el estado de precaución está entre 6 y 5 centímetros de distancia y por el último el estado de peligro es para menos de 5 centímetros. Y Para el sensor hay 4 estados, sin llovisna, llovisna, lluvioso y tormenta.
 
 ### Procedimiento
 1.  Montaje del prototipo: Se conectaron todos los componentes (sensores, Arduino, LED RGB, zumbador) en la protoboard siguiendo el esquemático de hardware.
 2.  Carga del programa: Se cargo el programa Arduino a través del puerto USB y con la laptop.
-3.  Conexion a la red WiFi: Se conectó el ESP32 a la red WiFi local.
-4.  Preparación del entorno: Se llenó el recipiente plástico con agua hasta un nivel inicial considerado seguro. Se midió la distancia entre el sensor ultrasónico y el nivel del agua, resgitrando el valor como punto de referencia.
-5.  Simulación de lluvia: Utilizando el termo y el envase, se vertió agua de forma gradual en el recipiente para simular de esta manera la lluvia y aumentar el nivel del agua, para así observar los cambios de estado del sistema.
-6.  Observación:
+3.  Configuración de la Raspberry Pi: Instalar OS, Python, librerías necesarias (paho-mqtt, sqlite3, php). Desplegar y ejecutar el script del Gateway.
+4.  Conexión a la Red: Conectar ESP32 y Raspberry Pi a la misma WLAN. Asegurar que la RPi tenga acceso a Internet.
+5.  Configuración Ubidots: Crear dispositivo, variables, dashboard y eventos/alertas en la plataforma Ubidots.
+6.  Preparación del entorno: Se llenó el recipiente plástico con agua hasta un nivel inicial considerado seguro. Se midió la distancia entre el sensor ultrasónico y el nivel del agua, resgitrando el valor como punto de referencia.
+7.  Simulación de lluvia: Utilizando el termo y el envase, se vertió agua de forma gradual en el recipiente para simular de esta manera la lluvia y aumentar el nivel del agua, para así observar los cambios de estado del sistema.
+8.  Observación:
    *   Se observó el comportamiento del LED RGB y el zumbador a medida que el nivel del agua se elevaba.
 
    *   Se verificó la información mostrada en la pantalla LCD.
 
    *   Se accedió al tablero de control web a través de un navegador para monitorear los datos del sensor y el estado del sistema de forma remota.
+   *   Verificar recepción de mensajes MQTT y almacenamiento en SQLite
+   *    Acceder al dashboard de Ubidots vía navegador 
 7. Registro de datos: Se registró la distancia medida por el sensor ultrasónico en el que se producían las transiciones entre los estados (seguro, precaución y peligro). Además, se verificó lo siguiente en el tablero de control:
 
-   *   Si el tablero mostraba los datos históricos correctamente.
+   *   Si el tablero mostraba los datos históricos correctamente. (Local y Global)
 
-   *   Si el tablero mostraba los datos en vivo de forma precisa.
+   *   Si el tablero mostraba los datos en vivo de forma precisa. (Local y Global)
 
-   *   Si era posible apagar el zumbador desde el tablero de control, y se verificó la respuesta del zumbador físico.
+   *   Si era posible apagar el zumbador desde el tablero de control, y se verificó la respuesta del zumbador físico. (Local y Global)
 
 ### Resultados
-| Nivel del Agua (distancia entre sensor y el agua) cm | Color del LED RGB | Zumbador             | Estado en pantalla LCD | Estado de lluvia | Datos Históricos | Datos en Vivo    | On/Off zumbador  |
-| :------------------------------------------------- | :--------------- | :------------------- | :-------------------- |:-------------------- |:-----------------|:-----------------|:-----------------|
-| 10                                                 | Verde            | No está sonando       | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |
-| 9                                                  | Verde            | No está sonando       | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |
-| 8                                                  | Verde            | Sonido Intermitente   | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |
-| 7                                                  | Verde            | Sonido Intermitente   | SEGURO                | LLOVIZNA            | SI               |        SI        |        SI        |
-| 6                                                  | Azul             | Sonido Intermitente   | PRECAUCION            | LLUVIOSO            | SI               |        SI        |        SI        |
-| 5                                                  | Azul             | Sonido Intermitente   | PRECAUCION            | LLUVIOSO            | SI               |        SI        |        SI        |
-| 4                                                  | Rojo             | Sonido Constante      | PELIGRO               | LLUVIOSO            | SI               |        SI        |        SI        |
-| 3                                                  | Rojo             | Sonido Constante      | PELIGRO               | TORMENTA            | SI               |        SI        |        SI        |
-| 2                                                  | Rojo             | Sonido Constante      | PELIGRO               | TORMENTA            | SI               |        SI        |        SI        |
+| Nivel del Agua (distancia entre sensor y el agua) cm | Color del LED RGB | Zumbador             | Estado en pantalla LCD | Estado de lluvia | Datos Históricos | Datos en Vivo    | On/Off zumbador  | Envio y Recepción Mqtt| Dashboard En vivo |
+| :------------------------------------------------- | :--------------- | :------------------- | :-------------------- |:-------------------- |:-----------------|:-----------------|:-----------------|:----------------------|:------------------|
+| 10                                                 | Verde            | No está sonando       | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |           SI          |         SI        |
+| 9                                                  | Verde            | No está sonando       | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |           SI          |         SI        |
+| 8                                                  | Verde            | Sonido Intermitente   | SEGURO                | SIN LLOVIZNA        | SI               |        SI        |        SI        |           SI          |         SI        |
+| 7                                                  | Verde            | Sonido Intermitente   | SEGURO                | LLOVIZNA            | SI               |        SI        |        SI        |           SI          |         SI        |
+| 6                                                  | Azul             | Sonido Intermitente   | PRECAUCION            | LLUVIOSO            | SI               |        SI        |        SI        |           SI          |         SI        |
+| 5                                                  | Azul             | Sonido Intermitente   | PRECAUCION            | LLUVIOSO            | SI               |        SI        |        SI        |           SI          |         SI        |
+| 4                                                  | Rojo             | Sonido Constante      | PELIGRO               | LLUVIOSO            | SI               |        SI        |        SI        |           SI          |         SI        |
+| 3                                                  | Rojo             | Sonido Constante      | PELIGRO               | TORMENTA            | SI               |        SI        |        SI        |           SI          |         SI        |
+| 2                                                  | Rojo             | Sonido Constante      | PELIGRO               | TORMENTA            | SI               |        SI        |        SI        |           SI          |         SI        |
 
 ### Análisis
 Los resultados obtenidos demuestran que el prototipo es capaz de dectectar cambios en el nivel del agua debido a las precipitaciones, y alertar al usuario mediante señales visuales (LED RGB) y sonoras (zumbador).
@@ -263,6 +271,7 @@ Específicamente, se comprobó que:
 *    Ante un aumento simulado del nivel del agua, el sistema transiciona a un estado de precaución (LED azul, zumbador intermitente) (entre 8cm y 4cm).
 *    Al alcanzar un estado de peligro, el sistema emite una alerta clara (LED rojo, zumbador continuo) (-4cm).
 *    El sistema detecta el estado de las precipitaciones (SIN LLOVIZNA, LLOVIZNA, LLUVIOSO, TORMENTA).
+*    El dashboard local y global mostrara en vivo los datos y ademas poder tener control de las alarmas físicas específicamente el zumbador.
 
 Es importante recalcar que después de diversas pruebas es recomendable realizar las otras pruebas en condiciones de lluvia reales para validar el comportamiento del sistema. Sin embargo, en estas condiciones simuladas el sistema mostró ser capaz de detectar posibles crecidas de ríos (nivel del agua en el recipiente).
 
