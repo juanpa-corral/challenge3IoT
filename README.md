@@ -4,20 +4,25 @@ Made by Juan Pablo Corral and Juan Esteban Ocampo
 ### Resumen general
 Colombia es un país con una diversidad geográfica y sus patrones climáticos que cambian constantemente, se enfreta con bastante frecuencia a crecidas de ríos, especialmente en las temporadas de lluvias y de fenómenos como "La Niña". Esto provoca inundaciones que pueden tener un impacto negativo en la comunidades y en la infraestructura, como ocurrió en 2024 en Bogotá y en otras regiones del País.[1]
 
-Este proyecto se centra en desarrollar un prototipo de sistema IoT (Internet of Things) para monitorear en tiempo real el nivel del agua en los ríos y detectar posibles crecidas de manera temprana. A diferencia del primer prototipo, este sistema permite a las autoridades acceder a la información de las variables físicas y recibir notificaciones de eventualidades a través de un "tablero de control" alojado en un servidor web embebido y accesible desde un navegador web (PC o teléfono celular) conectado a la WLAN. El sistema utiliza un microcontrolador ESP32 [2] y sensores ultrasónicos y de lluvia para medir el nivel del agua y las precipitaciones. En caso de detectar un aumento peligroso en el nivel del río, el sistema genera alertas visuales (LED RGB) y auditivas (zumbador) in situ, y además, notifica a las autoridades a través del tablero de control.  El tablero de control muestra el valor actual e histórico reciente de las variables físicas de interés, y permite la desactivación de alarmas físicas.
+Este proyecto se centra en desarrollar un prototipo de sistema IoT (Internet of Things) para monitorear en tiempo real el nivel del agua en los ríos y detectar posibles crecidas de manera temprana. A diferencia del primer y segundo prototipo, este sistema incorpora un Gateway IoT (implementado en una Raspberry Pi) que recibe los datos del ESP32 vía MQTT, los almacena localmente en una base de datos SQLite para mayor robustez, y los retransmite, también vía MQTT, a una plataforma IoT en la nube (Ubidots). El sistema utiliza un microcontrolador ESP32 [2], una Raspberry PI y sensores ultrasónicos y de lluvia para medir el nivel del agua y las precipitaciones. En caso de detectar un aumento peligroso en el nivel del río, el sistema genera alertas visuales (LED RGB) y auditivas (zumbador) in situ, y además, notifica a las autoridades a través del tablero de control. Esto permite a las autoridades no solo recibir alertas locales (visuales y auditivas)  y consultar un tablero de control local vía WLAN, sino también acceder a un tablero de control global en la plataforma Ubidots desde cualquier navegador web (PC o celular) conectado a Internet, desde cualquier parte de Colombia. Este tablero global permite visualizar datos actuales e históricos, recibir notificaciones de eventualidades y desactivar alarmas físicas remotamente.
 
-Este prototipo es un segundo paso hacia la implementación de un sistema de alerta temprana que podría ayudar a proteger a las comunidades y mitigar daños ocasionados por las inundaciones.
+Este prototipo es el último paso hacia la implementación de un sistema de alerta temprana que podría ayudar a proteger a las comunidades y mitigar daños ocasionados por las inundaciones.
 
 ### Motivación
 Las crecidas de los rión en Colombia representan una amenza constante, con unas posibles consecuencias que pueden ser devastadoras. Además de posibles muertes, este tipo de desastres pueden ocasionar la destrucción de viviendas, dañar infraestructuras y afectar la economía de las comunidades.
 
-Por esto mismo, es fundamental contar con medidas de prevención y mitigación que ayuden a reducir estos riesgos. La implementación de sistemas de IoT de monitoreo en tiempo real permite detectar crecidas con antelación, brindando alertas tempranas tanto a las autoridades como a la población. En este contexto, un "tablero de control" accesible de forma remota se convierte en una herramienta esencial para que las autoridades puedan tomar decisiones informadas e implementar medidas preventivas de manera efectiva, salvando vidas y minimizando los daños materiales.
+Por esto mismo, es fundamental contar con medidas de prevención y mitigación que ayuden a reducir estos riesgos. La implementación de sistemas de IoT de monitoreo en tiempo real permite detectar crecidas con antelación, brindando alertas tempranas tanto a las autoridades como a la población. En este contexto, un tablero de control accesible globalmente, sumado al local, se convierte en una herramienta esencial para que las autoridades tomen decisiones informadas e implementen medidas preventivas eficazmente, minimizando daños. La adición de un Gateway y una plataforma cloud robustece el sistema, asegurando la disponibilidad de datos y permitiendo análisis más profundos
 
 ### Justificación
 
 Este proyecto busca abordar el problema de las crecidas de ríos proporcionando información y alertas tempranas y precisas sobre los niveles de agua. Gracias al uso de sensores ultrasónicos y de lluvia, el sistema puede medir el nivel del agua y detectar cambios repeninos que indiquen un posible riesgo de inundación.
 
-Una de las principales ventajas es la capacidad de emitir alertas visuales y sonoras, directamente en el lugar, permitiendo asi advertir a las personas cercanas y autoridades necesarias, incluso si no se tiene acceso a internet o a otros medio de comunicación. Además de la emisión de alertas visuales y sonoras in situ, para advertir a las personas cercanas, este prototipo incorpora un "tablero de control" accesible a través de la WLAN.  Esto permite a las autoridades locales monitorear en tiempo real las variables físicas de interés, recibir notificaciones de eventualidades y desactivar alarmas físicas de forma remota.  Esta capacidad es especialmente útil para comunidades en zonas remotas o de difícil acceso, donde la comunicación puede ser limitada.  
+Una de las principales ventajas es la capacidad de emitir alertas visuales y sonoras, directamente en el lugar, permitiendo asi advertir a las personas cercanas y autoridades necesarias, incluso si no se tiene acceso a internet o a otros medio de comunicación. Además de la emisión de alertas visuales y sonoras in situ, para advertir a las personas cercanas, este prototipo incorpora un "tablero de control" accesible a través de la WLAN. Adicionando, la un Gateway (Raspberry Pi) que almacena datos (SQLite) y los envía a una plataforma cloud (Ubidots) usando MQTT, ofreciendo asi: 
+
+*  Acceso Global: Monitoreo y control remoto desde cualquier lugar a través de ubidots.
+*  Robustez: Almacenamiento local en el Gateway que previene pérdiad de datos si la conexión a la nube falla.
+*  Escalabilidad: Facilita la gestión de multiples puntos de monitoreo desde una plataforma centralizada.
+*  Análisis: La plataforma cloud permite almacenar históricos mas largos y aplicar herramientas de análisis de datos.
 
 En resumen, el sistema facilita el monitoreo continuo tanto para la población como para las autoridades, contribuyendo a una mejor preparación y respuesta ante posibles emergencias.
 
@@ -45,6 +50,10 @@ diseño las cuales se presentan a continuación:
 lo que restringe cuanta información al tiempo se pude evidenciar.
 *   **Rendimiento del servidor web embebido:** El microcontrolador ESP32 tiene recursos limitados memoria, capacidad de procesamiento, lo que impone restricciones en el número de usuarios concurrentes que pueden acceder al tablero de control y en la complejidad de la interfaz web. [1]
 *   **Conectividad WLAN:** La fiabilidad de la conexión WLAN puede verse afectada por la distancia al punto de acceso, la presencia de obstáculos y las interferencias.[6]
+*   **Conexión a internet estable**: para el correcto funcionamiento de la Raspberry Pi y la comunicación con la plataforma Cloud (Ubidots).
+*   **Latencia: **fiabilidad y latencia del broker mqtt debido a que los datos, se demoraban un poco transmitirse.
+*   **Plan gratuito Ubidots**: frecuencia de envío de datos, número de variable, número de dashboards, retención de datos históricos etc.
+*   **Latencia Total:** Entre todo el sistema, desde los sensores hacia la ESP32 de ahí hacia la RPi y de ahí hacia Ubidots.
 
 #### Disponibilidad
 *    **Solo uso de los sensores en aula de clase:** Dado que los dispositivos y los sensores son parte de la universidad,
@@ -52,12 +61,12 @@ estos solo estaban disponibles en el horario de clases o un horario permitido de
 
 #### De Espacio
 
-*    **Tamaño compacto:** El diseño deber fácil de instalar y transportar.
+*    **Tamaño compacto:** El diseño debe ser fácil de instalar y transportar.
 
 #### Escalabilidad
 
 *    **Expansión:** Diseñado para monitorear un solo punto, pero con posibilidad de escalar a múltiples ubicaciones. Además
-con posibilidad de incluir sensores mas precisos y con diferentes tecnologías para un rio de verdad.
+con posibilidad de incluir sensores mas precisos y con diferentes tecnologías para un río de verdad.
 
 #### Tiempo
 *    **Tiempo limitado para el desarrollo:** El tiempo disponible para el desarrollo e implementación del prototipo fue
@@ -67,10 +76,10 @@ lo que requirió priorizar funcionalidades y el proceso de diseño y construcci�
 #### Seguridad
 
 *   **Seguridad del acceso al tablero de control:** Se deben implementar mecanismos de seguridad para restringir el acceso al tablero de control solo a usuarios autorizados (por ejemplo, mediante autenticación).
-*   **Protección de datos:** Se deben proteger los datos transmitidos entre el microcontrolador y el tablero de control para evitar su interceptación o manipulación.
+*   **Protección de datos:** Se deben proteger los datos en tránsito (MQTT con TLS si es posible, credenciales Ubidots) y en reposo (base de datos SQLite). Asegurar acceso a la Raspberry Pi.
 
 #### Compatibilidad:
-*   **Compatibilidad con navegadores web:** El tablero de control debe ser compatible con los navegadores web más comunes (por ejemplo, Chrome, Firefox, Safari) y con diferentes dispositivos (PC, teléfono celular).
+*   **Compatibilidad con navegadores web:** El tablero de control (local y global) debe ser compatible con los navegadores web más comunes (por ejemplo, Chrome, Firefox, Safari) y con diferentes dispositivos (PC, teléfono celular).
 
 ### Arquitectura propuesta
 
