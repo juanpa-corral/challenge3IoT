@@ -146,7 +146,7 @@ Este tipo de diseño modular le permite a cada componente cumplir una función e
 
 #### Diagrama de Secuencia
 
-![Diagrama UML](UMLDiagrams/SecuenceDiagaram.png)
+![Diagrama UML](UMLDiagrams/SecuenceDiagram.png)
 
 #### Diagrama del Modulo de Alarma
 
