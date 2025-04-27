@@ -113,7 +113,11 @@ lo que requirió priorizar funcionalidades y el proceso de diseño y construcci�
    *   Pin del zumbador: ESP32 pin 23
 * **Sensor de lluvia (SunFounder):**
    *   Pin analógico: ESP32 pin 32
-
+* **Red:**
+   *   Configuracion WLAN (SSID, Password) para ESP32 y RPi, configurarición IP.
+* **MQTT:**
+   *   Dirección del Broker (IP de RPi, URL de Ubidots) Puerto 1883, Topics y Credenciales.
+    
 ### Desarrollo teórico modular
 Para construir el prototipo, se adoptó un enfoque modular, estructurando el sistema en componentes con funciones específicas para facilitar su diseño y funcionamiento.
 
