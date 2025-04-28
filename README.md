@@ -277,8 +277,8 @@ Es importante recalcar que después de diversas pruebas es recomendable realizar
 
 ## Autoevaluación del protocolo de pruebas
 ### Evaluación de la efectividad del protocolo
-* ¿El protocolo permitió validar correctamente el funcionamiento del prototipo? Sí, el protocolo de pruebas implementado permitió validar de manera efectiva el funcionamiento básico del prototipo, incluyendo la operación del tablero de control web. Se realizaron pruebas en distintos escenarios de nivel de agua y lluvia, permitiendo observar cómo el sistema respondía a través del LED RGB, el zumbador, la pantalla LCD y el tablero de control. Los resultados confirmaron que el prototipo detecta cambios en el nivel del agua y alerta de acuerdo a los umbrales establecidos, mostrando la información tanto localmente en la LCD como remotamente en el tablero de control.
-* ¿Se identificaron todos los posibles escenarios de uso? Aunque el protocolo permitió evaluar el funcionamiento general, no se consideraron todas las situaciones que podrían ocurrir en un entorno real. Por ejemplo, las pruebas se realizaron en un ambiente controlado y no se simularon condiciones climáticas extremas como lluvia intensa o fuertes vientos, que podrían afectar el rendimiento del sensor de lluvia o la precisión del sensor ultrasónico. Tampoco se evaluaron escenarios donde el nivel del agua desciende abruptamente o fluctúa de manera irregular, o fallos en la conexión WiFi.
+* ¿El protocolo permitió validar correctamente el funcionamiento del prototipo? Sí, el protocolo de pruebas implementado permitió validar de manera efectiva el funcionamiento básico del prototipo, incluyendo la operación del tablero de control web (local y Global). Se realizaron pruebas en distintos escenarios de nivel de agua y lluvia, permitiendo observar cómo el sistema respondía a través del LED RGB, el zumbador, la pantalla LCD y el tablero de control. Los resultados confirmaron que el prototipo detecta cambios en el nivel del agua y alerta de acuerdo a los umbrales establecidos, mostrando la información tanto localmente en la LCD como remotamente en el tablero de control.
+* ¿Se identificaron todos los posibles escenarios de uso? Aunque el protocolo permitió evaluar el funcionamiento general, no se consideraron todas las situaciones que podrían ocurrir en un entorno real. Por ejemplo, las pruebas se realizaron en un ambiente controlado y no se simularon condiciones climáticas extremas como lluvia intensa o fuertes vientos, que podrían afectar el rendimiento del sensor de lluvia o la precisión del sensor ultrasónico. Tampoco se evaluaron escenarios donde el nivel del agua desciende abruptamente o fluctúa de manera irregular, o fallos en la conexión WiFi. Pérdida prolongada de conexión a internet de la RPi. Fallos del broker MQTT. Limites de la API o plan de Ubidots.
 
 ### Posibles mejoras al protocolo de pruebas
 Para tener una evaluación más completa del prototipo, sería recomendable incluir las siguientes pruebas:
@@ -289,11 +289,14 @@ Para tener una evaluación más completa del prototipo, sería recomendable incl
 *    **Pruebas de duración:** Dejar el prototipo funcionando de manera continua por varios días para detectar posbiles fallos a largo plazo y evaluar su confiabilidad.
 *    **Pruebas de conectividad:** Evaluar el funcionamiento del sistema con diferentes calidades de conexión WiFi y en situaciones de pérdida temporal de la conexión.
 *   **Pruebas de carga del servidor web**: Simular el acceso simultáneo de varios usuarios al tablero de control para evaluar el rendimiento del servidor web del ESP32.
+*   **Pruebas de Robustez:** Simular desconexiones de red en diferentes puntos (ESP32-WLAN, RPi-Internet) y verificar recuperación. Inducir reinicios del ESP32 y RPi.
+*   **Pruebas de Seguridad:** Intentar conectar al broker MQTT sin autenticación. Verificar si se usa TLS/SSL. Evaluar seguridad de acceso a RPi.
+*   **Pruebas de Latencia:** Medir tiempos de respuesta end-to-end bajo diferentes condiciones de red.
 ## Conclusiones retos presentados durante el desarrollo del proyecto, trabajo futuro y referencias.
 
 ### Conclusiones
 
-El desarrollo de este prototipo de sistema IoT para la detección temprana de crecidas de ríos permitió demostrar la viabilidad de utilizar sensores y un ESP32 en la prevención de desastres naturales. A través de la implementación del sensor ultrasónico y a el sensor de lluvia SunFpunder, fue posible monitorear en tiempo real en nivel del agua y generar alertas visuales y sonoras en caso de peligro,  y proporcionando una interfaz web para el acceso remoto a los datos.
+El desarrollo del prototipo del Challenge 3 demostró con éxito la viabilidad de implementar un sistema IoT completo y distribuido para la detección temprana de crecidas, integrando un nodo sensor (ESP32), un Gateway IoT (Raspberry Pi) y una plataforma en la nube (Ubidots). Se logró el monitoreo en tiempo real, la generación de alertas locales y remotas, el almacenamiento persistente de datos y el acceso a un tablero de control global vía Internet. La arquitectura modular  utilizando MQTT para la comunicación y SQLite para el buffering local en el Gateway proporciona una solución robusta, escalable y accesible. La correcta integración de todos los componentes, incluyendo el servidor web local del ESP32  y el tablero en Ubidots, valida el enfoque propuesto para mejorar significativamente la capacidad de respuesta ante inundaciones.
 
 Entre los principales logros del proyecto se destacan:
 
@@ -303,6 +306,8 @@ Entre los principales logros del proyecto se destacan:
 *  Un diseño modular que permite futuras mejoras y adaptaciones para su implementación en escenario reales.
 *  El desarrollo de un servidor web embebido en el ESP32 para la transmisión de datos y el control del sistema a través de una red WiFi.
 *  El diseño y la implementación de un tablero de control web intuitivo para la visualización remota de datos y el control del zumbador.
+*  El correcto desarrollo de un borker MQTT para Pub/Sub de datos.
+*  El correcto desarrollo de un dashboard e nube (Ubidots).
 
 Este proyecto es un primer paso en la dirección correcta hacia el desarrollo de sistemas de alerta temprana accesibles y económicos. La implementación de este tipo de tecnologías prodría reducir significativamente los impactos de las inundaciones, protegiendo tanto a la población como a la infraestructura.
 
@@ -317,17 +322,23 @@ A lo largo del desarrollo del prototipo, se enfrentaron diversos desafíos:
 *    Interfaz limitada
 *    Conectividad WiFi
 *    Rendimiento del servidor web
+*    Configuración Gateway
+*    Comunicación MQTT
+*    Integracion de Ubidots
+*    Concurrencia
 
 ### Trabajo futuro
 Este prototipo podría estar sentando varias bases para un sistema más avanzado que pude ser implementado en ríos reales. Alguna mejoras futuras podrían ser:
 
-*    Integración con redes IoT: Conectar el sistema a plataformas en la nube para permitir el monitoreo remoto y la notificación de alertas a través de aplicaciones móviles o SMS.
+*    Integración con redes IoT: nootificación de alertas a través de aplicaciones móviles o SMS.
 *    Autonomía energética y sostenibilidad: Implementar un sistema completo de paneles solaras para garantizar el funcionamiento continuo del sistema en ubicaciones remotas.
 *    Resistencia a condiciones ambientales: Diseñar una carcasa empermeable y resistente para que de esta manera se puedan proteger los componentes electrónicos de condiciones adversas.
 *    Alcance: Hacer posible el despliegue de varias unidades en diferentes ubicaciones para obtener una red de monitoreo más sofisticada.
 *    Integración de datos de otras fuentes: Combinar los datos del sistema con información de otras fuentes, como pronósticos meteorológicos y mapas de riesgo de inundación, para mejorar la precisión de las predicciones y proporcionar alertas más tempranas y confiables.
-*    Interfaz de usuario mejorada: Desarrollar una interfaz de usuario más completa y fácil de usar, con visualizaciones de datos interactivas, mapas y opciones de configuración avanzadas
+*    Interfaz de usuario mejorada: Desarrollar una interfaz de usuario más completa y fácil de usar, con visualizaciones de datos interactivas, mapas y opciones de configuración avanzadas.
 *    Sistema de alerta a la comunidad: Implementar un sistema de alerta a la comunidad que envíe notificaciones automáticas a los residentes en riesgo a través de múltiples canales (SMS, aplicaciones móviles, altavoces públicos).
+*    Plataforma y Análisis: Explotar capacidades de análisis de Ubidots o exportar datos a otras plataformas (e.g., Grafana, ThingsBoard) para análisis predictivo, machine learning. Integración con sistemas de información geográfica (GIS).
+*    Seguridad: Implementar TLS/SSL obligatorio para MQTT. Endurecimiento de la seguridad de la Raspberry Pi. Gestión segura de claves y tokens.
 
 ### Actas de Reuniones y Definición de Roles
 
@@ -343,47 +354,49 @@ Este prototipo podría estar sentando varias bases para un sistema más avanzado
 *   Conexión física de componentes electrónicos (sensores, actuadores, ESP32)
 *   Programación del ESP32 para la adquisición de datos de los sensores y control de actuadores
 *   Configuración de la comunicación entre el ESP32 y la interfaz web
+*   Configuración de la comunicación MQTT
 
 ##### Juan Pablo Corral:
 
 *   Documentación del proyecto (informes, diagramas, etc.)
+*   Configuración de la Raspberry Pi
 *   Diseño y programación de la interfaz web (tablero de control) para visualización de datos y control del sistema
 
 #### Actas de Reuniones
 
 ##### Reunión 1
 
-*   Fecha: Miércoles, 19 de marzo de 2025
+*   Fecha: Miércoles, 23 de abril de 2025
 *   Hora: 9:00 - 12:00
 *   Lugar: Laboratoria del B
 
-Objetivos:Definir el alcance del proyecto y los objetivos específicos. Distribuir las tareas y responsabilidades entre los integrantes. Empezar cada integrante con su rol.
+Objetivos:Definir el alcance del proyecto y los objetivos específicos. Distribuir las tareas y responsabilidades entre los integrantes. Empezar cada integrante con su rol. Empezar el desarrollo fisico del prototipo.
 
 Temas tratados: Revisión de la descripción del proyecto y los requisitos del sistema. Discusión sobre las tecnologías a utilizar (ESP32, sensores, etc.). Acuerdo sobre la estructura modular del sistema. Asignación de tareas: Juan Esteban se encargará del hardware y la programación del ESP32, Juan Pablo de la documentación y la interfaz web.
 
 ##### Reunión 2
 
-*   Fecha: Sábado, 22 de marzo de 2025
-*   Hora: 10:00 - 12:00
-*   Lugar: Videoconferencia (Teams)
+*   Fecha: Viernes, 25 de abriol de 2025
+*   Hora: 8:00 - 1:00
+*   Lugar: Universidad de la Sabana
 
-Objetivos: Revisar el avance en la adquisición de componentes y el diseño del circuito. Discutir el diseño de la interfaz web y la comunicación con el ESP32. Resolver dudas y problemas técnicos.
+Objetivos: Terminar el desarrollo del prototipo
 
 ##### Reunión 3
 
-*   Fecha: Lunes, 24 de marzo de 2025
+*   Fecha: Sabado, 26 de abril de 2025
 *   Hora: 15:00 - 20:00
-*   Lugar: Casa de Juanes
+*   Lugar: Videoconferencia (Teams)
 
-Objetivos: Probar el montaje del circuito y la lectura de los sensores. Implementar la comunicación entre el ESP32 y la interfaz web. Ajustar el diseño de la interfaz web según los datos recibidos.
+Objetivos: Iniciar el informe
 
 ##### Reunión 4
 
-*   Fecha: Martes, 25 de marzo de 2025
+*   Fecha: Domingo, 27 de abril de 2025
 *   Hora: 10:00 - 13:00
 *   Lugar: Videoconferencia (Teams)
 
-Objetivos: Integrar todos los componentes y funcionalidades del sistema. Realizar pruebas exhaustivas del prototipo. Preparar la documentación final y la presentación del proyecto.
+Objetivos: Terminar el informe
 
 ### Anexos
 
