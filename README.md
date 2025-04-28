@@ -119,24 +119,236 @@ lo que requirió priorizar funcionalidades y el proceso de diseño y construcci�
    *   Dirección del Broker (IP de RPi, URL de Ubidots) Puerto 1883, Topics y Credenciales.
     
 ### Desarrollo teórico modular
-Para construir el prototipo, se adoptó un enfoque modular, estructurando el sistema en componentes con funciones específicas para facilitar su diseño y funcionamiento.
+Para construir el prototipo funcional del sistema IoT destinado a monitorear y detectar crecidas en ríos de Colombia, se adoptó un enfoque modular, dividiendo el sistema en componentes con funciones específicas. Este diseño facilita la implementación, el mantenimiento y la escalabilidad del sistema, al tiempo que cumple con las restricciones técnicas, económicas y regulatorias identificadas. Cada módulo fue desarrollado considerando estándares de diseño de ingeniería y los requerimientos mínimos establecidos, como la monitorización en tiempo real, la notificación in situ y el acceso local y global mediante un "Tablero de control". A continuación, se describen los módulos, sus criterios de diseño, implementación y justificación teórica.
 
-*   **Sensor de lluvia SunFounder:** Se eligió un sensor capaz de detectar la presencia de lluvia con la sensibilidad adecuada para activar el sistema de alerta en caso de ser necesario. El sensor funciona detectando cambios en la conductividad eléctrica cuando el agua entra en contacto con las pistas conductoras. El sensor entrega valores comprendidos entre 0 y 1023, donde 0 indica ausencia de agua, y 1023 es un valor de completa saturación de agua. Estos valores son escalados por medio del Arduino para representar los estados; SIN LLOVIZNA, LLOVIZNA, LLUVIOSO, TORMENTA. Por ejemplo, valores entre 0 y 255 se consideraron "SIN LLOVIZNA", valores entre 256 y 511 se consideraron "LLOVIZNA", valores entre 512 y 767 se consideraron "LLUVIOSO", y valores entre 768 y 1023 se consideraron "TORMENTA".[7]
-*    **Sensor ultrasónico:** Se utilizó el modelo HC-SR04 debido a su precisión y rango de medición, lo que permite determinar el nivel del agua dentro de un rango relevante.[1]
-*    **Alarma(LED RGB y zumbador):** Se diseñó una alarma que combina señales visuales (LED RGB) y sonoras (zumbador) para alertar sobre la situación. La luz verde significa seguro, la luz azul más el sonido intermitente significa precaución y por último la luz roja más el sonido continuo representa peligro.
-*    **Pantalla LCD 16x2:** Se configuró una pantalla LCD 16x2 para mostrar de manera clara y concisa información en tiempo real, incluyendo el nivel agua y el estado del sistema.
-*   **Servidor Web Embebido:**  Se implementó un servidor web en el ESP32 para proporcionar acceso a los datos del sistema a través de una red WiFi. El servidor expone puntos finales para recuperar los datos del sensor y controlar el zumbador. El servidor web expone las siguientes rutas (URLs): /datos: Para acceder a los datos actuales de los sensores (nivel del agua, estado de la lluvia). /history: Para acceder al historial de datos de los sensores, permitiendo visualizar la evolución del nivel del agua y la lluvia a lo largo del tiempo. /buzzer/on: Para activar el zumbador de forma remota. /buzzer/off: Para desactivar el zumbador de forma remota.
-*   **Tablero de Control (Interfaz Web):** Se desarrolló una interfaz web utilizando HTML, CSS y JavaScript para visualizar los datos del sistema y permitir la interacción del usuario. El tablero de control se estructura de la siguiente manera: 1. Visualización de datos actuales: Se muestran en tiempo real el nivel del agua, el estado de la lluvia y el estado de alerta del sistema 2. Visualización del historial de datos: Se presentan gráficas interactivas que muestran el historial del nivel del agua y la lluvia, permitiendo al usuario analizar la evolución de estas variables 3. Notificaciones y alertas: Se muestran notificaciones visuales en caso de que el nivel del agua alcance niveles de precaución o peligro. 4. Control del zumbador: Se proporcionan botones para activar y desactivar el zumbador de forma remota.
-*   **Multitarea/Hilos:** En el código del ESP32, se utiliza la funcionalidad de FreeRTOS para crear tres hilos (tareas) que se ejecutan de forma concurrente. Esta implementación mejora la eficiencia del sistema al permitir que diferentes partes del programa se ejecuten simultáneamente, optimizando el uso de los recursos de la ESP32. A continuación, se describe cada uno de los hilos:
-  1. TasskUltrasonido: Este hilo se encarga de realizar las mediciones de distancia utilizando el sensor ultrasónico HC-SR04. La función TaskUltrasonido() contiene el código necesario para activar el sensor, recibir el eco y calcular la distancia al objeto. Este hilo se ejecuta de forma periódica, tomando muestras de distancia cada 2000 milisegundos (2 segundos).
+*   **Sensor de lluvia SunFounder**:
 
-  2. TaskSensoresLCD: Este hilo se encarga de leer los datos del sensor de lluvia, controlar los LEDs RGB y el zumbador, y actualizar la información mostrada en la pantalla LCD. La función TaskSensoresLCD() contiene la lógica para leer el estado de la lluvia, determinar el estado del nivel del agua (seguro, precaución o peligro) y activar las alarmas correspondientes. Además, este hilo actualiza el display LCD con la distancia medida y el estado del sistema. Este hilo también se ejecuta periódicamente, cada 2000 milisegundos.
+Función: Detectar la presencia y la intensidad de la lluvia para activar alertas ante condiciones que puedan derivar en crecidas.
 
-  3. TaskWeb: Este hilo se encarga de gestionar el servidor web del ESP32. La función TaskWeb() contiene el código para escuchar las peticiones de los clientes, procesar las solicitudes y enviar las respuestas correspondientes. Este hilo permite acceder a los datos del sistema (distancia, estado de la lluvia, historial de datos) a través de una interfaz web, así como controlar el estado del zumbador de forma remota. Este hilo se ejecuta continuamente, esperando las conexiones de los clientes.
 
-  La creación de estos hilos se realiza en la función setup() del programa principal. Cada hilo se crea con una prioridad y un tamaño de stack específicos. Las prioridades se configuran para asegurar que las tareas más críticas (como la medición de distancia) se ejecuten con mayor frecuencia. Esta división permite que el microcontrolador ESP32 realice múltiples tareas de manera eficiente. Mejorando asi la capacidad de respuesta del sistema.
 
-Este tipo de diseño modular le permite a cada componente cumplir una función específica, mejorando la eficiencia y facilidad de mantenimiento del sistema. La inclusión de un servidor web y un tablero de control permite el monitoreo remoto y la interacción con el sistema a través de una red WiFi.[8]
+Criterios de diseño: Se seleccionó un sensor analógico de lluvia SunFounder por su capacidad para medir cambios en la conductividad eléctrica al contacto con el agua, ofreciendo una salida proporcional a la intensidad de la precipitación. Su sensibilidad ajustable permite adaptarlo a las condiciones locales de Colombia.
+
+
+
+Implementación: El sensor genera valores entre 0 y 1023, donde 0 indica ausencia de agua y 1023 representa saturación completa. Estos valores se procesan en el ESP32 y se escalan en cuatro estados discretos: "SIN LLOVIZNA" (0-255), "LLOVIZNA" (256-511), "LLUVIOSO" (512-767) y "TORMENTA" (768-1023). La discretización se realiza en el hilo TaskSensoresLCD para optimizar la respuesta del sistema.
+
+
+
+Justificación teórica: La elección de un sensor analógico frente a uno binario permite una medición más precisa y graduada de la precipitación, esencial para un sistema de alerta temprana. La discretización en cuatro niveles sigue principios de procesamiento de señales, facilitando la toma de decisiones basada en umbrales definidos.
+
+*   **Sensor ultrasónico HC-SR04**
+
+
+
+
+
+Función: Medir el nivel del agua en el río mediante la detección de la distancia desde el sensor hasta la superficie.
+
+
+
+Criterios de diseño: Se optó por el HC-SR04 debido a su precisión (±3 mm) y rango de medición (2 cm a 400 cm), adecuado para ríos colombianos. Su tecnología ultrasónica lo hace resistente a condiciones ambientales adversas y no invasivo.
+
+
+
+Implementación: Conectado al ESP32, el sensor mide la distancia mediante un pulso de disparo y el tiempo de retorno del eco. Las mediciones se ejecutan en el hilo TaskUltrasonido, que opera cada 2 segundos para garantizar datos actualizados sin interferir con otras tareas.
+
+
+
+Justificación teórica: La medición ultrasónica es un estándar en monitoreo de niveles de agua por su fiabilidad y bajo costo. El uso de un hilo separado en FreeRTOS optimiza la concurrencia y asegura mediciones periódicas, alineándose con los principios de diseño de sistemas embebidos.
+
+*   **Alarma (LED RGB y zumbador)**
+
+
+
+
+
+Función: Emitir alertas visuales y sonoras in situ según los niveles de peligro detectados por los sensores.
+
+
+
+Criterios de diseño: Se diseñó un sistema de alarma combinando un LED RGB y un zumbador para maximizar la percepción en entornos ruidosos o de baja visibilidad. Los estados se representan como: verde (seguro), azul (precaución) y rojo con sonido continuo (peligro).
+
+
+
+Implementación: Controlado desde el ESP32 en el hilo TaskSensoresLCD, el sistema activa las alarmas según umbrales predefinidos de nivel de agua y precipitación, con posibilidad de desactivación remota desde el "Tablero de control".
+
+
+
+Justificación teórica: La combinación de señales visuales y sonoras mejora la efectividad de las alertas, siguiendo principios de diseño de interfaces de usuario para sistemas críticos. La opción de control remoto cumple con los requerimientos de flexibilidad y accesibilidad.
+
+*   **Pantalla LCD 16x2**
+
+
+
+
+
+Función: Mostrar en tiempo real el nivel del agua y el estado del sistema para operadores locales.
+
+
+
+Criterios de diseño: Se eligió una pantalla LCD 16x2 por su bajo consumo, facilidad de integración con el ESP32 y capacidad para presentar datos esenciales de forma clara.
+
+
+
+Implementación: La pantalla se actualiza en el hilo TaskSensoresLCD cada 2 segundos, mostrando la distancia medida y el estado del sistema (seguro, precaución, peligro).
+
+
+
+Justificación teórica: La visualización in situ es fundamental para una respuesta inmediata en áreas sin conectividad remota. Su simplicidad y bajo costo la convierten en una solución estándar en sistemas IoT embebidos.
+
+*   **Servidor Web Embebido en ESP32**
+
+
+
+
+
+Función: Alojar el "Tablero de control" local y permitir el acceso a datos y control remoto a través de la WLAN de la alcaldía.
+
+
+
+Criterios de diseño: Se implementó un servidor web ligero con la biblioteca WiFiServer, diseñado para manejar solicitudes HTTP concurrentes y servir datos en formato JSON.
+
+
+
+Implementación: Ejecutado en el hilo TaskWeb, el servidor escucha en el puerto 80 y ofrece endpoints como /datos (valores actuales), /history (historial), /buzzer/on y /buzzer/off (control del zumbador).
+
+
+
+Justificación teórica: El uso de HTTP asegura compatibilidad con navegadores estándar, cumpliendo con el acceso local vía WLAN. Su implementación en un hilo dedicado optimiza la respuesta del sistema sin comprometer otras tareas.
+
+*   **Tablero de Control (Interfaz Web)**
+
+
+
+
+
+Función: Visualizar datos en tiempo real, historial y permitir interacción remota con el sistema.
+
+
+
+Criterios de diseño: Se desarrolló una interfaz web responsiva con HTML, CSS y JavaScript, compatible con PC y móviles, incluyendo gráficos interactivos y controles intuitivos.
+
+
+
+Implementación: La interfaz se comunica con el servidor del ESP32 vía solicitudes AJAX para actualizar datos sin recargar la página. Se integra Chart.js para gráficos y botones para controlar el zumbador.
+
+
+
+Justificación teórica: Una interfaz web cumple con los requerimientos de accesibilidad local y mejora la experiencia del usuario mediante actualizaciones en tiempo real, alineándose con estándares de diseño de interfaces IoT.
+
+*   **Multitarea/Hilos en ESP32**
+
+
+
+
+
+Función: Gestionar concurrentemente las tareas de medición, procesamiento, control de alarmas y manejo del servidor web.
+
+
+
+Criterios de diseño: Se empleó FreeRTOS para crear hilos con prioridades y tamaños de stack optimizados, asegurando un uso eficiente de los recursos del ESP32.
+
+
+
+Implementación:
+
+
+
+
+
+TaskUltrasonido: Mide la distancia cada 2 segundos.
+
+
+
+TaskSensoresLCD: Procesa datos de lluvia, controla alarmas y actualiza la LCD cada 2 segundos.
+
+
+
+TaskWeb: Gestiona el servidor web de forma continua, tambien envia datos mediante protocolo mqtt al broker.
+
+
+
+Justificación teórica: La multitarea mejora la eficiencia y capacidad de respuesta del sistema. Las prioridades asignadas garantizan que las tareas críticas se ejecuten oportunamente, siguiendo principios de diseño de sistemas operativos en tiempo real.
+
+*   **Raspberry Pi 5 como Gateway IoT**
+
+
+
+Función: Actuar como intermediario entre el ESP32 y la plataforma IoT, gestionando comunicación MQTT y almacenamiento local.
+
+
+
+Criterios de diseño: Se seleccionó la Raspberry Pi 5 con Debian por su capacidad de procesamiento, conectividad y soporte para herramientas como Mosquitto y Python.
+
+
+
+Implementación: Ejecuta un broker MQTT (Mosquitto) y scripts en Python que se suscriben a topics del ESP32, almacenan datos en un archivo csv y los reenvían a Ubidots vía MQTT.
+
+
+
+Justificación teórica: Un gateway local reduce la latencia y mejora la confiabilidad en entornos con conectividad intermitente, siendo una solución estándar en arquitecturas IoT distribuidas.
+
+
+*   **Comunicación MQTT**
+
+
+
+
+
+Función: Facilitar la transmisión de datos entre el ESP32, la Raspberry Pi y Ubidots.
+
+
+
+Criterios de diseño: MQTT se seleccionó por su eficiencia, bajo consumo de ancho de banda y soporte para comunicación asíncrona en IoT.
+
+
+
+Implementación: El ESP32 publica datos en topics específicos, la Raspberry Pi se suscribe y los reenvía a Ubidots, todo gestionado mediante Mosquitto.
+
+
+
+Justificación teórica: El modelo publicación/suscripción de MQTT es ideal para monitoreo en tiempo real y permite escalar el sistema fácilmente, cumpliendo con estándares IoT modernos.
+
+*   **Plataforma IoT Ubidots**
+
+
+
+
+
+Función: Proporcionar un dashboard global para monitoreo remoto y control de alarmas.
+
+
+
+Criterios de diseño: Ubidots fue elegido por su soporte MQTT, facilidad de uso y herramientas de visualización avanzadas.
+
+
+
+Implementación: El dashboard incluye widgets para nivel de agua, estado de lluvia, historial y un botón para desactivar la alarma, conectado vía MQTT desde la Raspberry Pi.
+
+
+
+Justificación teórica: Una plataforma en la nube permite acceso global, cumpliendo con el monitoreo desde cualquier parte de Colombia. El control remoto de alarmas añade funcionalidad práctica.
+
+*   **Hilo de Alta Prioridad para Envío de Datos MQTT en ESP32**
+
+
+
+
+
+Función: Garantizar la transmisión oportuna de datos al Gateway IoT.
+
+
+
+Criterios de diseño: Se creó TaskMQTT con alta prioridad para priorizar la comunicación MQTT sin afectar otras tareas.
+
+
+
+Implementación: Este hilo recopila datos de sensores y los publica en topics MQTT periódicamente, ejecutándose en paralelo a los demás hilos.
+
+
+
+Justificación teórica: Un hilo dedicado con alta prioridad asegura la entrega en tiempo real de datos críticos, esencial para sistemas de alerta temprana, siguiendo principios de diseño de sistemas concurrentes.
 
 ### Diagrama de UML
 
@@ -277,8 +489,8 @@ Es importante recalcar que después de diversas pruebas es recomendable realizar
 
 ## Autoevaluación del protocolo de pruebas
 ### Evaluación de la efectividad del protocolo
-* ¿El protocolo permitió validar correctamente el funcionamiento del prototipo? Sí, el protocolo de pruebas implementado permitió validar de manera efectiva el funcionamiento básico del prototipo, incluyendo la operación del tablero de control web. Se realizaron pruebas en distintos escenarios de nivel de agua y lluvia, permitiendo observar cómo el sistema respondía a través del LED RGB, el zumbador, la pantalla LCD y el tablero de control. Los resultados confirmaron que el prototipo detecta cambios en el nivel del agua y alerta de acuerdo a los umbrales establecidos, mostrando la información tanto localmente en la LCD como remotamente en el tablero de control.
-* ¿Se identificaron todos los posibles escenarios de uso? Aunque el protocolo permitió evaluar el funcionamiento general, no se consideraron todas las situaciones que podrían ocurrir en un entorno real. Por ejemplo, las pruebas se realizaron en un ambiente controlado y no se simularon condiciones climáticas extremas como lluvia intensa o fuertes vientos, que podrían afectar el rendimiento del sensor de lluvia o la precisión del sensor ultrasónico. Tampoco se evaluaron escenarios donde el nivel del agua desciende abruptamente o fluctúa de manera irregular, o fallos en la conexión WiFi.
+* ¿El protocolo permitió validar correctamente el funcionamiento del prototipo? Sí, el protocolo de pruebas implementado permitió validar de manera efectiva el funcionamiento básico del prototipo, incluyendo la operación del tablero de control web (local y Global). Se realizaron pruebas en distintos escenarios de nivel de agua y lluvia, permitiendo observar cómo el sistema respondía a través del LED RGB, el zumbador, la pantalla LCD y el tablero de control. Los resultados confirmaron que el prototipo detecta cambios en el nivel del agua y alerta de acuerdo a los umbrales establecidos, mostrando la información tanto localmente en la LCD como remotamente en el tablero de control.
+* ¿Se identificaron todos los posibles escenarios de uso? Aunque el protocolo permitió evaluar el funcionamiento general, no se consideraron todas las situaciones que podrían ocurrir en un entorno real. Por ejemplo, las pruebas se realizaron en un ambiente controlado y no se simularon condiciones climáticas extremas como lluvia intensa o fuertes vientos, que podrían afectar el rendimiento del sensor de lluvia o la precisión del sensor ultrasónico. Tampoco se evaluaron escenarios donde el nivel del agua desciende abruptamente o fluctúa de manera irregular, o fallos en la conexión WiFi. Pérdida prolongada de conexión a internet de la RPi. Fallos del broker MQTT. Limites de la API o plan de Ubidots.
 
 ### Posibles mejoras al protocolo de pruebas
 Para tener una evaluación más completa del prototipo, sería recomendable incluir las siguientes pruebas:
@@ -289,11 +501,14 @@ Para tener una evaluación más completa del prototipo, sería recomendable incl
 *    **Pruebas de duración:** Dejar el prototipo funcionando de manera continua por varios días para detectar posbiles fallos a largo plazo y evaluar su confiabilidad.
 *    **Pruebas de conectividad:** Evaluar el funcionamiento del sistema con diferentes calidades de conexión WiFi y en situaciones de pérdida temporal de la conexión.
 *   **Pruebas de carga del servidor web**: Simular el acceso simultáneo de varios usuarios al tablero de control para evaluar el rendimiento del servidor web del ESP32.
+*   **Pruebas de Robustez:** Simular desconexiones de red en diferentes puntos (ESP32-WLAN, RPi-Internet) y verificar recuperación. Inducir reinicios del ESP32 y RPi.
+*   **Pruebas de Seguridad:** Intentar conectar al broker MQTT sin autenticación. Verificar si se usa TLS/SSL. Evaluar seguridad de acceso a RPi.
+*   **Pruebas de Latencia:** Medir tiempos de respuesta end-to-end bajo diferentes condiciones de red.
 ## Conclusiones retos presentados durante el desarrollo del proyecto, trabajo futuro y referencias.
 
 ### Conclusiones
 
-El desarrollo de este prototipo de sistema IoT para la detección temprana de crecidas de ríos permitió demostrar la viabilidad de utilizar sensores y un ESP32 en la prevención de desastres naturales. A través de la implementación del sensor ultrasónico y a el sensor de lluvia SunFpunder, fue posible monitorear en tiempo real en nivel del agua y generar alertas visuales y sonoras en caso de peligro,  y proporcionando una interfaz web para el acceso remoto a los datos.
+El desarrollo del prototipo del Challenge 3 demostró con éxito la viabilidad de implementar un sistema IoT completo y distribuido para la detección temprana de crecidas, integrando un nodo sensor (ESP32), un Gateway IoT (Raspberry Pi) y una plataforma en la nube (Ubidots). Se logró el monitoreo en tiempo real, la generación de alertas locales y remotas, el almacenamiento persistente de datos y el acceso a un tablero de control global vía Internet. La arquitectura modular  utilizando MQTT para la comunicación y SQLite para el buffering local en el Gateway proporciona una solución robusta, escalable y accesible. La correcta integración de todos los componentes, incluyendo el servidor web local del ESP32  y el tablero en Ubidots, valida el enfoque propuesto para mejorar significativamente la capacidad de respuesta ante inundaciones.
 
 Entre los principales logros del proyecto se destacan:
 
@@ -303,6 +518,8 @@ Entre los principales logros del proyecto se destacan:
 *  Un diseño modular que permite futuras mejoras y adaptaciones para su implementación en escenario reales.
 *  El desarrollo de un servidor web embebido en el ESP32 para la transmisión de datos y el control del sistema a través de una red WiFi.
 *  El diseño y la implementación de un tablero de control web intuitivo para la visualización remota de datos y el control del zumbador.
+*  El correcto desarrollo de un borker MQTT para Pub/Sub de datos.
+*  El correcto desarrollo de un dashboard e nube (Ubidots).
 
 Este proyecto es un primer paso en la dirección correcta hacia el desarrollo de sistemas de alerta temprana accesibles y económicos. La implementación de este tipo de tecnologías prodría reducir significativamente los impactos de las inundaciones, protegiendo tanto a la población como a la infraestructura.
 
@@ -317,17 +534,23 @@ A lo largo del desarrollo del prototipo, se enfrentaron diversos desafíos:
 *    Interfaz limitada
 *    Conectividad WiFi
 *    Rendimiento del servidor web
+*    Configuración Gateway
+*    Comunicación MQTT
+*    Integracion de Ubidots
+*    Concurrencia
 
 ### Trabajo futuro
 Este prototipo podría estar sentando varias bases para un sistema más avanzado que pude ser implementado en ríos reales. Alguna mejoras futuras podrían ser:
 
-*    Integración con redes IoT: Conectar el sistema a plataformas en la nube para permitir el monitoreo remoto y la notificación de alertas a través de aplicaciones móviles o SMS.
+*    Integración con redes IoT: nootificación de alertas a través de aplicaciones móviles o SMS.
 *    Autonomía energética y sostenibilidad: Implementar un sistema completo de paneles solaras para garantizar el funcionamiento continuo del sistema en ubicaciones remotas.
 *    Resistencia a condiciones ambientales: Diseñar una carcasa empermeable y resistente para que de esta manera se puedan proteger los componentes electrónicos de condiciones adversas.
 *    Alcance: Hacer posible el despliegue de varias unidades en diferentes ubicaciones para obtener una red de monitoreo más sofisticada.
 *    Integración de datos de otras fuentes: Combinar los datos del sistema con información de otras fuentes, como pronósticos meteorológicos y mapas de riesgo de inundación, para mejorar la precisión de las predicciones y proporcionar alertas más tempranas y confiables.
-*    Interfaz de usuario mejorada: Desarrollar una interfaz de usuario más completa y fácil de usar, con visualizaciones de datos interactivas, mapas y opciones de configuración avanzadas
+*    Interfaz de usuario mejorada: Desarrollar una interfaz de usuario más completa y fácil de usar, con visualizaciones de datos interactivas, mapas y opciones de configuración avanzadas.
 *    Sistema de alerta a la comunidad: Implementar un sistema de alerta a la comunidad que envíe notificaciones automáticas a los residentes en riesgo a través de múltiples canales (SMS, aplicaciones móviles, altavoces públicos).
+*    Plataforma y Análisis: Explotar capacidades de análisis de Ubidots o exportar datos a otras plataformas (e.g., Grafana, ThingsBoard) para análisis predictivo, machine learning. Integración con sistemas de información geográfica (GIS).
+*    Seguridad: Implementar TLS/SSL obligatorio para MQTT. Endurecimiento de la seguridad de la Raspberry Pi. Gestión segura de claves y tokens.
 
 ### Actas de Reuniones y Definición de Roles
 
@@ -343,47 +566,49 @@ Este prototipo podría estar sentando varias bases para un sistema más avanzado
 *   Conexión física de componentes electrónicos (sensores, actuadores, ESP32)
 *   Programación del ESP32 para la adquisición de datos de los sensores y control de actuadores
 *   Configuración de la comunicación entre el ESP32 y la interfaz web
+*   Configuración de la comunicación MQTT
 
 ##### Juan Pablo Corral:
 
 *   Documentación del proyecto (informes, diagramas, etc.)
+*   Configuración de la Raspberry Pi
 *   Diseño y programación de la interfaz web (tablero de control) para visualización de datos y control del sistema
 
 #### Actas de Reuniones
 
 ##### Reunión 1
 
-*   Fecha: Miércoles, 19 de marzo de 2025
+*   Fecha: Miércoles, 23 de abril de 2025
 *   Hora: 9:00 - 12:00
 *   Lugar: Laboratoria del B
 
-Objetivos:Definir el alcance del proyecto y los objetivos específicos. Distribuir las tareas y responsabilidades entre los integrantes. Empezar cada integrante con su rol.
+Objetivos:Definir el alcance del proyecto y los objetivos específicos. Distribuir las tareas y responsabilidades entre los integrantes. Empezar cada integrante con su rol. Empezar el desarrollo fisico del prototipo.
 
 Temas tratados: Revisión de la descripción del proyecto y los requisitos del sistema. Discusión sobre las tecnologías a utilizar (ESP32, sensores, etc.). Acuerdo sobre la estructura modular del sistema. Asignación de tareas: Juan Esteban se encargará del hardware y la programación del ESP32, Juan Pablo de la documentación y la interfaz web.
 
 ##### Reunión 2
 
-*   Fecha: Sábado, 22 de marzo de 2025
-*   Hora: 10:00 - 12:00
-*   Lugar: Videoconferencia (Teams)
+*   Fecha: Viernes, 25 de abriol de 2025
+*   Hora: 8:00 - 1:00
+*   Lugar: Universidad de la Sabana
 
-Objetivos: Revisar el avance en la adquisición de componentes y el diseño del circuito. Discutir el diseño de la interfaz web y la comunicación con el ESP32. Resolver dudas y problemas técnicos.
+Objetivos: Terminar el desarrollo del prototipo
 
 ##### Reunión 3
 
-*   Fecha: Lunes, 24 de marzo de 2025
+*   Fecha: Sabado, 26 de abril de 2025
 *   Hora: 15:00 - 20:00
-*   Lugar: Casa de Juanes
+*   Lugar: Videoconferencia (Teams)
 
-Objetivos: Probar el montaje del circuito y la lectura de los sensores. Implementar la comunicación entre el ESP32 y la interfaz web. Ajustar el diseño de la interfaz web según los datos recibidos.
+Objetivos: Iniciar el informe
 
 ##### Reunión 4
 
-*   Fecha: Martes, 25 de marzo de 2025
+*   Fecha: Domingo, 27 de abril de 2025
 *   Hora: 10:00 - 13:00
 *   Lugar: Videoconferencia (Teams)
 
-Objetivos: Integrar todos los componentes y funcionalidades del sistema. Realizar pruebas exhaustivas del prototipo. Preparar la documentación final y la presentación del proyecto.
+Objetivos: Terminar el informe
 
 ### Anexos
 
